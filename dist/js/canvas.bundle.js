@@ -83,7 +83,7 @@ var mouse = {
     y: innerHeight / 2
 };
 
-var colors = ['#2185C5', '#7ECEFD', '#FFF6E5', '#FF7F66'];
+var colors = ['#00bdff', '#4d39ce', '#088eff'];
 
 // Event Listeners
 addEventListener('mousemove', function (event) {
@@ -115,44 +115,66 @@ function distance(x1, y1, x2, y2) {
 }
 
 // Objects
-function Object(x, y, radius, color) {
+function Particle(x, y, radius, color) {
+    var _this = this;
+
     this.x = x;
     this.y = y;
     this.radius = radius;
     this.color = color;
+    this.radians = Math.random() * Math.PI * 2;
+    this.velocity = 0.05;
+    this.distanceFromCenter = randomIntFromRange(50, 120);
+    this.lastMouse = { x: x, y: y };
+
+    this.update = function () {
+        var lastPoint = { x: _this.x, y: _this.y };
+
+        //Move points over time
+        _this.radians += _this.velocity;
+
+        //Drag mouse effect
+        _this.lastMouse.x += (mouse.x - _this.lastMouse.x) * 0.05;
+        _this.lastMouse.y += (mouse.y - _this.lastMouse.y) * 0.05;
+
+        //Circular particle motion
+        _this.x = _this.lastMouse.x + Math.cos(_this.radians) * _this.distanceFromCenter;
+        _this.y = _this.lastMouse.y + Math.sin(_this.radians) * _this.distanceFromCenter;
+        _this.draw(lastPoint);
+    };
+
+    this.draw = function (lastPoint) {
+        c.beginPath();
+        c.strokeStyle = _this.color;
+        c.lineWidth = _this.radius;
+        c.moveTo(lastPoint.x, lastPoint.y); //takes particle's previous location
+        c.lineTo(_this.x, _this.y); //takes particles new location
+        c.stroke();
+        c.closePath();
+    };
 }
 
-Object.prototype.update = function () {
-    this.draw();
-};
-
-Object.prototype.draw = function () {
-    c.beginPath();
-    c.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
-    c.fillStyle = this.color;
-    c.fill();
-    c.closePath();
-};
-
 // Implementation
-var objects = void 0;
+var particles = void 0;
 function init() {
-    objects = [];
+    particles = [];
 
-    for (var i = 0; i < 400; i++) {
-        // objects.push();
+    for (var i = 0; i < 50; i++) {
+        var radius = Math.random() * 2 + 1;
+        particles.push(new Particle(canvas.width / 2, canvas.height / 2, radius, randomColor(colors)));
     }
 }
 
 // Animation Loop
 function animate() {
     requestAnimationFrame(animate);
-    c.clearRect(0, 0, canvas.width, canvas.height);
+    //each frame we draw a new white rectangle with transparancy that layers ontop
+    c.fillStyle = 'rgba(255,255,255, 0.05)';
+    c.fillRect(0, 0, canvas.width, canvas.height);
 
-    c.fillText('HTML CANVAS BOILERPLATE', mouse.x, mouse.y);
-    // objects.forEach(object => {
-    //  object.update();
-    // });
+    particles.forEach(function (particle) {
+        particle.update();
+    });
 }
 
 init();
